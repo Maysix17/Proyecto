@@ -1,0 +1,107 @@
+version: "3.9"
+
+services:
+  #  Backend NestJS
+  backend:
+    build:
+      context: ./API_Nest_Agro_Tic
+      dockerfile: Dockerfile
+    container_name: api_nest_agro_tic
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      - DB_HOST=db
+      - DB_PORT=${DB_PORT}
+      - DB_USERNAME=${DB_USERNAME}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - DB_DATABASE=${DB_DATABASE}
+      - REDIS_HOST=redis
+      - REDIS_PORT=${REDIS_PORT}
+      - JWT_SECRET=${JWT_SECRET}
+      - JWT_EXPIRATION_TIME=${JWT_EXPIRATION_TIME}
+      - JWT_REFRESH_SECRET=${JWT_REFRESH_SECRET}
+      - JWT_REFRESH_EXPIRATION_TIME=${JWT_REFRESH_EXPIRATION_TIME}
+      - NODE_ENV=${NODE_ENV}
+      - PORT=${PORT}
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    volumes:
+      - ./API_Nest_Agro_Tic:/app
+      - /app/node_modules
+    networks:
+      - agro_net
+
+  #  Base de datos PostgreSQL
+  db:
+    image: postgres:15-alpine
+    container_name: agro_db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${DB_USERNAME}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${DB_DATABASE}
+    ports:
+      - "5433:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USERNAME} -d ${DB_DATABASE}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - agro_net
+
+  #  Redis
+  redis:
+    image: redis:7-alpine
+    container_name: agro_redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - agro_net
+
+  #  Adminer (para gestionar la base de datos desde el navegador)
+  adminer:
+    image: adminer
+    container_name: agro_adminer
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    depends_on:
+      - db
+    networks:
+      - agro_net
+
+  #  Frontend React
+  frontend:
+    build:
+      context: ./FrontEnd_AgroTic
+      dockerfile: Dockerfile
+    container_name: agro_frontend
+    restart: unless-stopped
+    ports:
+      - "5173:5173"
+    environment:
+      - VITE_API_URL=http://localhost:3000
+    depends_on:
+      - backend
+    networks:
+      - agro_net
+
+#  Red compartida
+networks:
+  agro_net:
+    driver: bridge
+
+#  Volúmenes persistentes
+volumes:
+  postgres_data:
+  redis_data:

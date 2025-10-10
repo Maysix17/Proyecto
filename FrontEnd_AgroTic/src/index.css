@@ -1,0 +1,66 @@
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Reset body styles to prevent modal interference */
+body {
+  display: block !important;
+  background: white !important;
+  justify-content: normal !important;
+  align-items: normal !important;
+  min-height: auto !important;
+  font-family: inherit !important;
+  padding: 0 !important;
+}
+
+/* Animación suave */
+.fade-in {
+  animation: fadeIn 0.5s ease-in-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Modal animations */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: scale(0.9) translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+/* Responsive calendar styles */
+@media (max-width: 768px) {
+  .calendar-responsive {
+    width: 100% !important;
+    max-width: 320px;
+  }
+  .calendar-responsive .react-datepicker__month-container {
+    width: 100%;
+  }
+  .calendar-responsive .react-datepicker {
+    font-size: 14px;
+  }
+}

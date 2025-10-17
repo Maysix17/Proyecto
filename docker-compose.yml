@@ -1,37 +1,19 @@
 version: "3.9"
 
 services:
-  #  Backend NestJS
+  #  Backend NestJS (desde Docker Hub)
   backend:
-    build:
-      context: ./API_Nest_Agro_Tic
-      dockerfile: Dockerfile
+    image: mayer17/api_backend:latest
     container_name: api_nest_agro_tic
     restart: unless-stopped
+    env_file: .env
     ports:
       - "3000:3000"
-    environment:
-      - DB_HOST=db
-      - DB_PORT=${DB_PORT}
-      - DB_USERNAME=${DB_USERNAME}
-      - DB_PASSWORD=${DB_PASSWORD}
-      - DB_DATABASE=${DB_DATABASE}
-      - REDIS_HOST=redis
-      - REDIS_PORT=${REDIS_PORT}
-      - JWT_SECRET=${JWT_SECRET}
-      - JWT_EXPIRATION_TIME=${JWT_EXPIRATION_TIME}
-      - JWT_REFRESH_SECRET=${JWT_REFRESH_SECRET}
-      - JWT_REFRESH_EXPIRATION_TIME=${JWT_REFRESH_EXPIRATION_TIME}
-      - NODE_ENV=${NODE_ENV}
-      - PORT=${PORT}
     depends_on:
       db:
         condition: service_healthy
       redis:
         condition: service_started
-    volumes:
-      - ./API_Nest_Agro_Tic:/app
-      - /app/node_modules
     networks:
       - agro_net
 
@@ -68,7 +50,7 @@ services:
     networks:
       - agro_net
 
-  #  Adminer (para gestionar la base de datos desde el navegador)
+  #  Adminer (para gestionar la base de datos)
   adminer:
     image: adminer
     container_name: agro_adminer
@@ -80,17 +62,15 @@ services:
     networks:
       - agro_net
 
-  #  Frontend React
+  #  Frontend React (desde Docker Hub)
   frontend:
-    build:
-      context: ./FrontEnd_AgroTic
-      dockerfile: Dockerfile
+    image: mayer17/frontend_agrotic:latest
     container_name: agro_frontend
     restart: unless-stopped
     ports:
-      - "5173:5173"
+      - "80:80"
     environment:
-      - VITE_API_URL=http://localhost:3000
+      - VITE_API_URL=http://backend:3000
     depends_on:
       - backend
     networks:

@@ -1,0 +1,92 @@
+version: "3.9"
+
+services:
+  #  Backend NestJS (desde Docker Hub)
+  backend:
+    image: mayer17/api_backend:latest
+    container_name: api_nest_agro_tic
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      # === ARREGLO CORS: ESTA VARIABLE PERMITE LA COMUNICACIÓN DEL FRONTEND ===
+      - FRONTEND_URLS=http://192.168.1.126:8001,http://localhost:8001
+      # =======================================================================
+    ports:
+      - "3001:3000"  # Mapeo correcto: HOST:3001 -> CONTAINER:3000
+    depends_on:
+      db:
+        condition: service_healthy # Espera a que la DB esté lista
+      redis:
+        condition: service_started
+    networks:
+      - agro_net
+
+  #  Base de datos PostgreSQL
+  db:
+    image: postgres:15-alpine
+    container_name: agro_db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${DB_USERNAME}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${DB_DATABASE}
+    ports:
+      - "5433:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USERNAME} -d ${DB_DATABASE}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - agro_net
+
+  #  Redis
+  redis:
+    image: redis:7-alpine
+    container_name: agro_redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - agro_net
+
+  #  Adminer (para gestionar la base de datos)
+  adminer:
+    image: adminer
+    container_name: agro_adminer
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    depends_on:
+      - db
+    networks:
+      - agro_net
+
+  #  Frontend React (desde Docker Hub)
+  frontend:
+    image: mayer17/frontend_agrotic:latest
+    container_name: agro_frontend
+    restart: unless-stopped
+    ports:
+      - "8001:80"
+    environment:
+      # URL de la API vista desde el cliente (tu navegador), que usa el puerto expuesto.
+      - VITE_API_URL=http://192.168.1.126:3001
+    depends_on:
+      - backend
+    networks:
+      - agro_net
+
+# Red compartida
+networks:
+  agro_net:
+    driver: bridge
+
+# Volúmenes persistentes
+volumes:
+  postgres_data:
+  redis_data:
